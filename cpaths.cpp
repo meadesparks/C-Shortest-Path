@@ -5,6 +5,7 @@
 
 int main(int argc, char *argv[]){
   graph g;
+  std::vector<graph::vertex_label> cpath_rpt;
 
   if(argc != 5) {
     std::cout << "usage:  ./cpath <filename> <source-vertex> <destination-vertex> <budget>\n";
@@ -21,6 +22,7 @@ int main(int argc, char *argv[]){
   g.display();
   std::cout << "\nEND ADJACENCY LIST:\n\n";
 
+  g.cpath(argv[2], argv[3], cpath_rpt);
   std::cout << "NOT IMPLEMENTED" << std::endl;
 
   return 0;

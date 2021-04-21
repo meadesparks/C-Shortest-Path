@@ -569,6 +569,11 @@ class graph {
      * RUNTIME:  bfs must still be O(V+E).
      *
      */
+
+    bool cpath(int src, int dest, std::vector<vertex_label> &report){
+        std::cout << "hi from cpath\n";
+        return true;
+    } 
     // bool bfs(int src, std::vector<vertex_label> &report) {
     //   int u, v;
     //   std::queue<int> q;
@@ -617,7 +622,17 @@ class graph {
     //   }
     //   return true;
     // }
-
+    bool cpath(const string src, const string dest, std::vector<vertex_label> &report){
+        int s, d;
+        if((s=name2id(src)) == -1){
+            return false;
+        }
+        if((d=name2id(dest)) == -1){
+            return false;
+        }
+        cpath(s, d, report);
+        return true;
+    }
     // bool bfs(const string src, std::vector<vertex_label> &report) {
     //   int u;
 
