@@ -569,153 +569,153 @@ class graph {
      * RUNTIME:  bfs must still be O(V+E).
      *
      */
-    bool bfs(int src, std::vector<vertex_label> &report) {
-      int u, v;
-      std::queue<int> q;
-      // EXTRACT MIN DATA STRUCTURE
-      // std::priority_queue <int, vector<int>, std::greater<int> > q;
+    // bool bfs(int src, std::vector<vertex_label> &report) {
+    //   int u, v;
+    //   std::queue<int> q;
+    //   // EXTRACT MIN DATA STRUCTURE
+    //   // std::priority_queue <int, vector<int>, std::greater<int> > q;
 
-      if(src < 0 || src >= num_nodes())
-        return false;
+    //   if(src < 0 || src >= num_nodes())
+    //     return false;
 
-      init_report(report);
+    //   init_report(report);
 
-      report[src].dist = 0;
+    //   report[src].dist = 0;
 
-      // since src is the root of the bfs tree, it has no 
-      //   predecessor.
-      // By convention, we set the predecessor to itself.
-      report[src].pred = src;
-      report[src].state = DISCOVERED;
-      report[src].npaths = 1;
-      q.push(src);
+    //   // since src is the root of the bfs tree, it has no 
+    //   //   predecessor.
+    //   // By convention, we set the predecessor to itself.
+    //   report[src].pred = src;
+    //   report[src].state = DISCOVERED;
+    //   report[src].npaths = 1;
+    //   q.push(src);
 
-      while(!q.empty()) {
-        // dequeue front node from queue
-        u = q.front();
-        q.pop();
+    //   while(!q.empty()) {
+    //     // dequeue front node from queue
+    //     u = q.front();
+    //     q.pop();
 
-        // examine outgoing edges of u
-        for(edge &e : vertices[u].outgoing) {
-          v = e.vertex_id;
-          if(report[v].state == UNDISCOVERED) { // LOOK HERE
-            report[v].dist = report[u].dist + 1;          // get the distance
-            report[v].npaths = report[u].npaths;
-            // else if(report[u].dist + 1 < report[v].dist){
-            //   report[v].npaths = 1;
-            // }
-            report[v].pred = u;
-            report[v].state = DISCOVERED;
-            q.push(v);
-          }
-          else{
-            if(report[v].dist == report[u].dist+1){
-              report[v].npaths = report[v].npaths + report[u].npaths;
-            }
-          }
-        }
-      }
-      return true;
-    }
+    //     // examine outgoing edges of u
+    //     for(edge &e : vertices[u].outgoing) {
+    //       v = e.vertex_id;
+    //       if(report[v].state == UNDISCOVERED) { // LOOK HERE
+    //         report[v].dist = report[u].dist + 1;          // get the distance
+    //         report[v].npaths = report[u].npaths;
+    //         // else if(report[u].dist + 1 < report[v].dist){
+    //         //   report[v].npaths = 1;
+    //         // }
+    //         report[v].pred = u;
+    //         report[v].state = DISCOVERED;
+    //         q.push(v);
+    //       }
+    //       else{
+    //         if(report[v].dist == report[u].dist+1){
+    //           report[v].npaths = report[v].npaths + report[u].npaths;
+    //         }
+    //       }
+    //     }
+    //   }
+    //   return true;
+    // }
 
-    bool bfs(const string src, std::vector<vertex_label> &report) {
-      int u;
+    // bool bfs(const string src, std::vector<vertex_label> &report) {
+    //   int u;
 
-      if((u=name2id(src)) == -1)
-          return false;
-      bfs(u, report);
-      return true;
-    }
+    //   if((u=name2id(src)) == -1)
+    //       return false;
+    //   bfs(u, report);
+    //   return true;
+    // }
 
   private:
-    void _dfs(int u, vector<vertex_label> & rpt, bool &cycle) {
-      int v;
+    // void _dfs(int u, vector<vertex_label> & rpt, bool &cycle) {
+    //   int v;
 
-      rpt[u].state = ACTIVE;
-      for(edge &e : vertices[u].outgoing) {
-        v = e.vertex_id;
-        if(rpt[v].state == UNDISCOVERED) {
-          rpt[v].pred = u;
-          rpt[v].dist = rpt[u].dist + 1;
-          _dfs(v, rpt, cycle);
-        }
-        if(rpt[v].state == ACTIVE) 
-          cycle = true;
-      }
-      rpt[u].state = FINISHED;
-    }
+    //   rpt[u].state = ACTIVE;
+    //   for(edge &e : vertices[u].outgoing) {
+    //     v = e.vertex_id;
+    //     if(rpt[v].state == UNDISCOVERED) {
+    //       rpt[v].pred = u;
+    //       rpt[v].dist = rpt[u].dist + 1;
+    //       _dfs(v, rpt, cycle);
+    //     }
+    //     if(rpt[v].state == ACTIVE) 
+    //       cycle = true;
+    //   }
+    //   rpt[u].state = FINISHED;
+    // }
 
   public:
-    bool dfs(int u, vector<vertex_label> & rpt, bool &cycle) {
+    // bool dfs(int u, vector<vertex_label> & rpt, bool &cycle) {
 
-      if(u < 0 || u >= num_nodes()) 
-        return false;
+    //   if(u < 0 || u >= num_nodes()) 
+    //     return false;
 
-      cycle = false;
+    //   cycle = false;
 
-      init_report(rpt);
-      rpt[u].pred = u;
-      rpt[u].dist = 0;
-      _dfs(u, rpt, cycle);
-      return true;
-    }
+    //   init_report(rpt);
+    //   rpt[u].pred = u;
+    //   rpt[u].dist = 0;
+    //   _dfs(u, rpt, cycle);
+    //   return true;
+    // }
 
-    bool dfs(const string &src, vector<vertex_label> & rpt, bool &cycle) {
-      int u;
+    // bool dfs(const string &src, vector<vertex_label> & rpt, bool &cycle) {
+    //   int u;
 
-      if((u=name2id(src)) == -1)
-          return false;
-      dfs(u, rpt, cycle);
-      return true;
-    }
+    //   if((u=name2id(src)) == -1)
+    //       return false;
+    //   dfs(u, rpt, cycle);
+    //   return true;
+    // }
 
-    bool has_cycle() {
-      int u;
-      bool cycle=false;
-      vector<vertex_label> rpt;
+    // bool has_cycle() {
+    //   int u;
+    //   bool cycle=false;
+    //   vector<vertex_label> rpt;
 
-      init_report(rpt);
-      for(u=0; u<num_nodes(); u++) {
-        if(rpt[u].state == UNDISCOVERED) {
-          _dfs(u, rpt, cycle);
-          if(cycle)
-            return true;
-        }
-      }
-      return false;
-    }
+    //   init_report(rpt);
+    //   for(u=0; u<num_nodes(); u++) {
+    //     if(rpt[u].state == UNDISCOVERED) {
+    //       _dfs(u, rpt, cycle);
+    //       if(cycle)
+    //         return true;
+    //     }
+    //   }
+    //   return false;
+    // }
 
-    bool topo_sort(std::vector<int> &order) {
-      std::queue<int> q;
-      std::vector<int> indegrees;
-      int u, v;
-      int indeg;
+    // bool topo_sort(std::vector<int> &order) {
+    //   std::queue<int> q;
+    //   std::vector<int> indegrees;
+    //   int u, v;
+    //   int indeg;
 
-      order.clear();
-      if(has_cycle())
-        return false;
+    //   order.clear();
+    //   if(has_cycle())
+    //     return false;
 
-      for(u=0; u<num_nodes(); u++) {
-        indeg = vertices[u].incoming.size();
+    //   for(u=0; u<num_nodes(); u++) {
+    //     indeg = vertices[u].incoming.size();
 
-        indegrees.push_back(indeg);
-        if(indeg==0)
-          q.push(u);
-      }
+    //     indegrees.push_back(indeg);
+    //     if(indeg==0)
+    //       q.push(u);
+    //   }
 
-      while(!q.empty()){
-        u = q.front();
-        q.pop();
-        order.push_back(u);
-        for(edge &e : vertices[u].outgoing) {
-          v = e.vertex_id;
-          indegrees[v]--;
-          if(indegrees[v]==0) 
-            q.push(v);
-        }
-      }
-      return true;
-    }
+    //   while(!q.empty()){
+    //     u = q.front();
+    //     q.pop();
+    //     order.push_back(u);
+    //     for(edge &e : vertices[u].outgoing) {
+    //       v = e.vertex_id;
+    //       indegrees[v]--;
+    //       if(indegrees[v]==0) 
+    //         q.push(v);
+    //     }
+    //   }
+    //   return true;
+    // }
 
 
 
@@ -847,13 +847,13 @@ class graph {
      *
      *  runtime:  O(V+E)
      */
-    bool dag_critical_paths(vector<vertex_label> & rpt) {
+    // bool dag_critical_paths(vector<vertex_label> & rpt) {
 
-      if(has_cycle())
-        return false;
-      // your code here...
-      return true;
-    }
+    //   if(has_cycle())
+    //     return false;
+    //   // your code here...
+    //   return true;
+    // }
 
     /*
      *  TODO 30 points
@@ -919,12 +919,12 @@ class graph {
      *   u?
      *
      */
-    bool dag_num_paths(vector<vertex_label> & rpt) {
-      if(has_cycle())
-        return false;
-      // your code here...
-      return true;
-    }
+    // bool dag_num_paths(vector<vertex_label> & rpt) {
+    //   if(has_cycle())
+    //     return false;
+    //   // your code here...
+    //   return true;
+    // }
 
     /*
      * TODO 20 points
@@ -941,12 +941,12 @@ class graph {
      *
      * RUNTIME:  O(V+E)
      */
-    bool valid_topo_order(const vector<int> & order) {
-      if(has_cycle())
-        return false;
-      return true;
+    // bool valid_topo_order(const vector<int> & order) {
+    //   if(has_cycle())
+    //     return false;
+    //   return true;
 
-    }
+    // }
 
     /*
      * TODO 30 points
@@ -1009,14 +1009,14 @@ class graph {
      * COMMENT:  this function can be implemented with about
      *   20 lines of code.
      */
-    bool enum_paths(int target, vector<string> &paths) {
-      paths.clear();
-      if(has_cycle() || target < 0 || target >= num_nodes())
-        return false;
+    // bool enum_paths(int target, vector<string> &paths) {
+    //   paths.clear();
+    //   if(has_cycle() || target < 0 || target >= num_nodes())
+    //     return false;
 
-      // your code here!
-      return true;
-    }
+    //   // your code here!
+    //   return true;
+    // }
 
 
 
@@ -1029,16 +1029,13 @@ class graph {
      *       Simply translates target vertex name to its integer id
      *       and calls enum_paths(int, vector<string> &) above.
      */
-    bool enum_paths(const string &target,  vector<string> &paths) {
-      int tgt;
-      if((tgt=name2id(target)) == -1)
-          return false;
+    // bool enum_paths(const string &target,  vector<string> &paths) {
+    //   int tgt;
+    //   if((tgt=name2id(target)) == -1)
+    //       return false;
 
-      return enum_paths(tgt, paths);
-    }
-    
-
-
+    //   return enum_paths(tgt, paths);
+    // }
 
 };
 
