@@ -7,7 +7,7 @@
 #include <sstream>
 #include <fstream>
 #include <bits/stdc++.h>
-// #include <priority_queue>
+#include <climits>
 
 using std::string;
 using std::vector;
@@ -36,7 +36,6 @@ void pvec(const std::vector<T> & vec) {
     std::cout << x << "\n";;
   }
 }
-
 
 /*
  * class:  graph
@@ -139,18 +138,49 @@ class graph {
 
     // a vertex struct stores all info about a particular
     //    vertex:  name, ID, incoming and outgoing edges.
-    struct vertex {
+      struct vertex {
       int id;
       vector<edge> outgoing;
       vector<edge> incoming;
       string name;
-      // c value = inf
-      // t value = inf
+      int c = INT_MAX;
+      int t = INT_MAX;
 
       vertex ( int _id=0, string _name="") 
         : id { _id }, name { _name } 
       { }
+
+      bool operator < (vertex b) const { // TODO: Verify that this works
+          if(c < b.c){
+            return false;
+          }
+          else if(c == b.c){
+            if(t <  b.t){
+              return false;
+            }
+            return true;
+          }
+          return true;
+      }
     };
+
+    // struct weightPair {
+    //   int c;
+    //   int t;
+    //   int v_id;
+    //   bool operator < (weightPair a, weightPair b){
+    //       if(a.c < b.c){
+    //         return true;
+    //       }
+    //       else if(a.c == b.c){
+    //         if(a.t <  b.t){
+    //           return true;
+    //         }
+    //         return false;
+    //       }
+    //       return false;
+    //   }
+    // };
     
 
     /**************************************************
@@ -201,8 +231,9 @@ class graph {
     // by vertex-id.
     struct vertex_label {
       double dist; // <- d (cost)
-      // double time;
+      double time;
       int pred;
+      vector<std::tuple<int, int>> tradeoffCurve;
       char state; // not needed
       int npaths; // not needed
 
@@ -570,10 +601,74 @@ class graph {
      *
      */
 
+    //  bool inOrder(std::tuple<int, int> a, std::tuple<int, int> b){
+    //       if(std::get<0>(a) < std::get<0>(b)){
+    //         return true;
+    //       }
+    //       else if(a[0] == b[0]){
+    //         if(a[1] <  b[1]){
+    //           return true;
+    //         }
+    //         return false;
+    //       }
+    //       return false;
+    //   }
+
     bool cpath(int src, int dest, std::vector<vertex_label> &report){
         std::cout << "hi from cpath\n";
+        init_report(report);
+        std::priority_queue <vertex, vector<vertex>, std::less<vertex>> q;
+        vertices[src].c = 0;
+        vertices[src].t = 0;
+        std::cout << "src id  is: " << src << " and src name is: " << id2name(src) << "\n";
+
+        for(vertex v : vertices){
+          q.push(v);
+        }
+
+        // while(!q.empty()){
+          for(int i = 0; i < 2; i++){
+          std::cout << "min is: " << q.top().name << std::endl;
+          vertex currv = q.top();
+          for(edge e : currv.outgoing){
+            // if( (e.weight + currv.c) < vertices[e.vertex_id].c){
+            //   vertices[e.vertex_id].c = e.weight + currv.c;
+            //   q.push(vertices[e.vertex_id]);
+            // }
+            if(report[e.vertex_id].tradeoffCurve.empty() 
+               || std::get<1>(report[e.vertex_id].tradeoffCurve.back()) > e.weight_time + currv.t ){ //TODO: or vertices[e.vertex_id].t ??
+              // update weights
+              vertices[e.vertex_id].c = e.weight + currv.c;
+              vertices[e.vertex_id].t = e.weight_time + currv.t;
+              // add new weights to priority q
+              q.push(vertices[e.vertex_id]);
+              // add option to report
+              std::tuple<int, int> res (vertices[e.vertex_id].c, vertices[e.vertex_id].t);
+              report[e.vertex_id].tradeoffCurve.push_back(res);
+            }
+          }
+          q.pop();
+        }
+        for(int i = 0; i < report.size(); i++){
+          std::cout << "vertex name is: " << vertices[i].name << std::endl;          
+          for(auto i : report[i].tradeoffCurve){
+            std::cout << "\tcost is: " <<  std::get<0>(i) << " and time is: " << std::get<1>(i) << std::endl;
+          }
+        }
+        //std::cout << "min2 is: " << q.top().name << std::endl;
         return true;
-    } 
+    }
+
+
+    
+// void abssort(float* x, unsigned n) {
+//     std::sort(x, x + n,
+//         // Lambda expression begins
+//         [](float a, float b) {
+//             return (std::abs(a) < std::abs(b));
+//         } // end of lambda expression
+//     );
+// }
     // bool bfs(int src, std::vector<vertex_label> &report) {
     //   int u, v;
     //   std::queue<int> q;
