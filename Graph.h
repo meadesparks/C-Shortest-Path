@@ -6,7 +6,7 @@
 #include <unordered_map>
 #include <sstream>
 #include <fstream>
-#include <bits/stdc++.h>
+// #include <bits/stdc++.h>
 #include <climits>
 
 using std::string;
@@ -623,32 +623,61 @@ class graph {
         std::cout << "src id  is: " << src << " and src name is: " << id2name(src) << "\n";
 
         for(vertex v : vertices){
-          q.push(v);
+          vertex n;
+          n.c = v.c;
+          n.t = v.t;
+          n.name = v.name;
+          n.id = v.id;
+          std::cout << "n.c, n.t, n.name, n.id: " << n.c << " "  << n.t << " " << " " << n.name << " " << n.id << std::endl;
+          q.push(n);
         }
 
-        // while(!q.empty()){
-          for(int i = 0; i < 2; i++){
+        while(!q.empty()){
+          // for(int i = 0; i < 2; i++){
           std::cout << "min is: " << q.top().name << std::endl;
           vertex currv = q.top();
-          for(edge e : currv.outgoing){
+
+          std::tuple<int, int> res (currv.c, currv.t);
+          if(report[currv.id].tradeoffCurve.empty() || !(std::get<1>(report[currv.id].tradeoffCurve.back()) <= currv.t)){
+            report[currv.id].tradeoffCurve.push_back(res); // P
+          }
+          
+
+          for(edge e : vertices[currv.id].outgoing){
             // if( (e.weight + currv.c) < vertices[e.vertex_id].c){
             //   vertices[e.vertex_id].c = e.weight + currv.c;
             //   q.push(vertices[e.vertex_id]);
             // }
             if(report[e.vertex_id].tradeoffCurve.empty() 
                || std::get<1>(report[e.vertex_id].tradeoffCurve.back()) > e.weight_time + currv.t ){ //TODO: or vertices[e.vertex_id].t ??
+              //  if(!report[e.vertex_id].tradeoffCurve.empty() ){
+              //  std::cout << "std::get<1>(report[e.vertex_id].tradeoffCurve.back()): " << std::get<1>(report[e.vertex_id].tradeoffCurve.back()) << std::endl;
+              //  }
               // update weights
               vertices[e.vertex_id].c = e.weight + currv.c;
               vertices[e.vertex_id].t = e.weight_time + currv.t;
               // add new weights to priority q
-              q.push(vertices[e.vertex_id]);
+              vertex m; 
+              m.c = vertices[e.vertex_id].c;
+              m.t = vertices[e.vertex_id].t;
+              m.name = vertices[e.vertex_id].name;
+              m.id = vertices[e.vertex_id].id;
+              std::cout << "\tm.c, m.t, m.name, m.id: " << m.c << " "  << m.t << " " << " " << m.name << " " << m.id << std::endl;
+              q.push(m);
               // add option to report
-              std::tuple<int, int> res (vertices[e.vertex_id].c, vertices[e.vertex_id].t);
-              report[e.vertex_id].tradeoffCurve.push_back(res);
+
+              // std::tuple<int, int> res (vertices[e.vertex_id].c, vertices[e.vertex_id].t);
+              // report[e.vertex_id].tradeoffCurve.push_back(res); // P
+
+              // // DEBUG //
+              // std::cout << "vertex name is: " << vertices[e.vertex_id].name << ", std::get<1>(report[e.vertex_id].tradeoffCurve.back()): " 
+              //           << std::get<1>(report[e.vertex_id].tradeoffCurve.back()) << std::endl;
+              // // DEBUG //
             }
           }
           q.pop();
         }
+        std::cout << "--------------------------------------------------------\n";
         for(int i = 0; i < report.size(); i++){
           std::cout << "vertex name is: " << vertices[i].name << std::endl;          
           for(auto i : report[i].tradeoffCurve){
