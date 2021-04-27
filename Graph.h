@@ -8,6 +8,12 @@
 #include <fstream>
 // #include <bits/stdc++.h>
 #include <climits>
+#include <stack>
+//////
+#include<pthread.h>
+#include <unistd.h>
+//////
+
 
 using std::string;
 using std::vector;
@@ -145,6 +151,7 @@ class graph {
       string name;
       int c = INT_MAX;
       int t = INT_MAX;
+      int pred;
 
       vertex ( int _id=0, string _name="") 
         : id { _id }, name { _name } 
@@ -233,10 +240,12 @@ class graph {
       double dist; // <- d (cost)
       double time;
       int pred;
+      std::stack<int> predArray;
       vector<std::tuple<int, int>> tradeoffCurve;
       char state; // not needed
       int npaths; // not needed
-
+      
+      vector<int> path;
       // vector<tuple<double, double>> P
       
       vertex_label( double _dist=0.0, int _pred=-1, char _state='?',
@@ -614,6 +623,60 @@ class graph {
     //       return false;
     //   }
 
+
+    void displayCPath(std::vector<vertex_label> &report, int budget, int sourceid, int destid){
+        std::cout << "budget is: " << budget << "\nsource is:  " << id2name(sourceid) << std::endl;
+        int currid = destid;
+        std::stack<int> result; 
+
+        while(currid != sourceid){
+          std::cout << "currid is : " << id2name(currid) << std::endl;
+          std::cout << "budget is: " << budget << std::endl;
+          for(auto i : report[currid].tradeoffCurve){
+            if(std::get<0>(report[currid].tradeoffCurve.back()) > budget){
+              std::cout << "hit\n" << std::endl;
+
+              std::cout << "IF STATEMENT report[currid].tradeoffCurve.back() : " <<  std::get<0>(report[currid].tradeoffCurve.back()) 
+                        << " report[currid].predArray.top();" << id2name(report[currid].predArray.top()) << std::endl;
+
+              report[currid].tradeoffCurve.pop_back();
+              report[currid].predArray.pop();
+            }
+            else{
+              std::cout << " ELSE STATEMEMT report[currid].tradeoffCurve.back() : " <<  std::get<0>(report[currid].tradeoffCurve.back()) 
+                        << " report[currid].predArray.top();" << id2name(report[currid].predArray.top()) << std::endl;
+              int w; 
+              for(edge e : vertices[currid].incoming){
+                if(e.vertex_id == report[currid].predArray.top()){
+                  w = e.weight;
+                  break;
+                }
+              }
+              budget = budget - w;
+              result.push(currid);
+              currid = report[currid].predArray.top();
+              continue;
+            }
+          }
+          sleep(1);
+        }
+
+        result.push(sourceid);
+
+        std::cout << "The fastest path we can afford is: \n\t";
+
+        while(!result.empty()){
+          std::cout << id2name(result.top());
+          if(!result.empty()){
+            std::cout << " -> ";
+          }
+          result.pop();
+        }
+
+
+    }
+
+
     bool cpath(int src, int dest, std::vector<vertex_label> &report){
         std::cout << "hi from cpath\n";
         init_report(report);
@@ -621,6 +684,8 @@ class graph {
         vertices[src].c = 0;
         vertices[src].t = 0;
         std::cout << "src id  is: " << src << " and src name is: " << id2name(src) << "\n";
+
+        // exit(-1);
 
         for(vertex v : vertices){
           vertex n;
@@ -631,15 +696,22 @@ class graph {
           std::cout << "n.c, n.t, n.name, n.id: " << n.c << " "  << n.t << " " << " " << n.name << " " << n.id << std::endl;
           q.push(n);
         }
+        //exit(-1);
 
         while(!q.empty()){
+          bool addToPredArray = false;
           // for(int i = 0; i < 2; i++){
           std::cout << "min is: " << q.top().name << std::endl;
           vertex currv = q.top();
+          
+          if(currv.c == INT_MAX){
+            break; // if the top of the q is infinity the rest of the graph is unreachable from src
+          }
 
           std::tuple<int, int> res (currv.c, currv.t);
           if(report[currv.id].tradeoffCurve.empty() || !(std::get<1>(report[currv.id].tradeoffCurve.back()) <= currv.t)){
             report[currv.id].tradeoffCurve.push_back(res); // P
+            report[currv.id].predArray.push(currv.pred);
           }
           
 
@@ -656,12 +728,14 @@ class graph {
               // update weights
               vertices[e.vertex_id].c = e.weight + currv.c;
               vertices[e.vertex_id].t = e.weight_time + currv.t;
+              //report[e.vertex_id].predArray.push(currv.id);
               // add new weights to priority q
               vertex m; 
               m.c = vertices[e.vertex_id].c;
               m.t = vertices[e.vertex_id].t;
               m.name = vertices[e.vertex_id].name;
               m.id = vertices[e.vertex_id].id;
+              m.pred = currv.id;
               std::cout << "\tm.c, m.t, m.name, m.id: " << m.c << " "  << m.t << " " << " " << m.name << " " << m.id << std::endl;
               q.push(m);
               // add option to report
@@ -673,17 +747,25 @@ class graph {
               // std::cout << "vertex name is: " << vertices[e.vertex_id].name << ", std::get<1>(report[e.vertex_id].tradeoffCurve.back()): " 
               //           << std::get<1>(report[e.vertex_id].tradeoffCurve.back()) << std::endl;
               // // DEBUG //
+              //sleep(2);
             }
           }
           q.pop();
         }
-        std::cout << "--------------------------------------------------------\n";
-        for(int i = 0; i < report.size(); i++){
-          std::cout << "vertex name is: " << vertices[i].name << std::endl;          
-          for(auto i : report[i].tradeoffCurve){
-            std::cout << "\tcost is: " <<  std::get<0>(i) << " and time is: " << std::get<1>(i) << std::endl;
-          }
-        }
+        // std::cout << "--------------------------------------------------------\n";
+        // for(int i = 0; i < report.size(); i++){
+        //   std::cout << "vertex name is: " << vertices[i].name << std::endl;          
+        //   for(auto k : report[i].tradeoffCurve){
+        //     std::cout << "\tcost is: " <<  std::get<0>(k) << " and time is: " << std::get<1>(k) << std::endl;
+        //   }
+        //   // for(auto j : report[i].predArray){
+        //   //   std::cout << "\tpred is: " << id2name(j) << std::endl;
+        //   // }
+        //   while(!report[i].predArray.empty()){
+        //     std::cout << "\tpred -- " << id2name(report[i].predArray.top()) << std::endl;
+        //     report[i].predArray.pop();
+        //   }
+        // }
         //std::cout << "min2 is: " << q.top().name << std::endl;
         return true;
     }
