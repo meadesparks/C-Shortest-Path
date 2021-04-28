@@ -1,0 +1,24 @@
+Cost Constrained Shortest Paths
+
+Team members - Adam Sammakia and Meade Sparks
+
+Given a source, destination, and a budget, cpath will display all non-dominated paths 
+from the source to the destination with regard to cost and time. cpath will also print
+the cost and time of the fastest cost feasible path within the budget (if one exists), 
+as well as the path itself.
+
+Graph file should be formatted as:
+   
+   <source> <destination> <edge cost> <edge time>
+
+There is a sampleInput.txt example in the src folder
+
+There is a makefile included in the src folder, to create an executable run 'make all'.
+
+to run the program:
+
+    ./cpath <input file> <source vertex> <destination vertex> <budget> 
+   
+
+
+

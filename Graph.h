@@ -1,4 +1,3 @@
-
 #include <iostream>
 #include <vector>
 #include <queue>
@@ -6,13 +5,8 @@
 #include <unordered_map>
 #include <sstream>
 #include <fstream>
-// #include <bits/stdc++.h>
 #include <climits>
 #include <stack>
-//////
-#include<pthread.h>
-#include <unistd.h>
-//////
 
 
 using std::string;
@@ -24,6 +18,29 @@ using std::unordered_set;
 #define DISCOVERED   'd'
 #define ACTIVE       'a'
 #define FINISHED     'f'
+/*
+Cost Constrained Shortest Paths
+
+Team members - Adam Sammakia and Meade Sparks
+
+Given a source, destination, and a budget, cpath will display all non-dominated paths
+from the source to the destination with regard to cost and time. cpath will also print
+the cost and time of the fastest cost feasible path within the budget (if one exists),
+as well as the path itself.
+
+Graph file should be formatted as:
+
+   <source> <destination> <edge cost> <edge time>
+
+There is a sampleInput.txt example in the src folder
+
+There is a makefile included in the src folder, to create an executable run 'make all'.
+
+to run the program:
+
+    ./cpath <input file> <source vertex> <destination vertex> <budget>
+*/
+
 
 /*
  * function:  pvec
@@ -157,7 +174,9 @@ class graph {
         : id { _id }, name { _name } 
       { }
 
-      bool operator < (vertex b) const { // TODO: Verify that this works
+      // priority queue in cpath needs a less than operator defined
+      // less than is defined by cost with time as a tie-breaker
+      bool operator < (vertex b) const { 
           if(c < b.c){
             return false;
           }
@@ -170,25 +189,6 @@ class graph {
           return true;
       }
     };
-
-    // struct weightPair {
-    //   int c;
-    //   int t;
-    //   int v_id;
-    //   bool operator < (weightPair a, weightPair b){
-    //       if(a.c < b.c){
-    //         return true;
-    //       }
-    //       else if(a.c == b.c){
-    //         if(a.t <  b.t){
-    //           return true;
-    //         }
-    //         return false;
-    //       }
-    //       return false;
-    //   }
-    // };
-    
 
     /**************************************************
     *   Data members of the Graph class here!
@@ -237,7 +237,7 @@ class graph {
     // typically a "report" will be a vector of vertex_labels indexed
     // by vertex-id.
     struct vertex_label {
-      double dist; // <- d (cost)
+      double dist; 
       double time;
       int pred;
       std::stack<int> predArray;
@@ -246,26 +246,13 @@ class graph {
       int npaths; // not needed
       
       vector<int> path;
-      // vector<tuple<double, double>> P
-      
+
       vertex_label( double _dist=0.0, int _pred=-1, char _state='?',
           int _npaths=0) 
         : dist { _dist }, pred { _pred }, state { _state}, npaths { 0 }
       { }
 
     };
-
-    // struct vertex_label {
-    //   double cost; // <- d (cost)
-    //   double time;
-    //   std::vector<std::tuple<double, double, int>> P // (cost, time, pred) 
-
-    //   vertex_label( double _cost=0.0, double _time=0.0) 
-    //     : dist { _dist }, pred { _pred }, state { _state}, npaths { 0 }
-    //   { }
-
-    // };    
-
 
     graph() {}
 
@@ -381,9 +368,6 @@ class graph {
       return s;
     }
 
-
-
-
     /*
      * func: add_edge
      * desc: adds edge (src,dest) with given weight to graph if
@@ -430,7 +414,6 @@ class graph {
       return true;
     }
 
-
     /*
      * func: add_edge(string &)
      * desc: takes an edge specification as a single string, 
@@ -473,7 +456,7 @@ class graph {
       }
       // only three tokens: use default weight_time 
       if(!(ss >> weight_str_time)){
-        weight_time = 1.0; // TODO: DOUBLE CHECK THAT weight_time should be default 1.0
+        weight_time = 1.0; 
       }
       else{
         if(!(std::stringstream(weight_str_time) >> weight_time)){
@@ -590,62 +573,50 @@ class graph {
 
 
   public:
-    /*
-     * TODO 10 points
-     *
-     * modify bfs so that vertex labels reflect the NUMBER OF 
-     *   SHORTEST PATHS TO THE VERTEX LABELED:
-     *
-     *     report[u].npaths is assigned the number of shortest 
-     *        paths from src to u.
-     *
-     *   OBSERVATIONS:
-     *
-     *     report[src].npaths will be 1.
-     *
-     *     if a vertex u is not reachable from src, then 
-     *     report[u].npaths will be assigned 0. 
-     *
-     * RUNTIME:  bfs must still be O(V+E).
-     *
-     */
 
-    //  bool inOrder(std::tuple<int, int> a, std::tuple<int, int> b){
-    //       if(std::get<0>(a) < std::get<0>(b)){
-    //         return true;
-    //       }
-    //       else if(a[0] == b[0]){
-    //         if(a[1] <  b[1]){
-    //           return true;
-    //         }
-    //         return false;
-    //       }
-    //       return false;
-    //   }
-
-
+    // displayCPath
+    //
+    // Display the shortest cost feasible path given budget. 
     void displayCPath(std::vector<vertex_label> &report, int budget, int sourceid, int destid){
-        std::cout << "budget is: " << budget << "\nsource is:  " << id2name(sourceid) << std::endl;
         int currid = destid;
+        int totTime = 0;
+        int totCost = 0;
+        bool firstTime = true; 
         std::stack<int> result; 
 
-        while(currid != sourceid){
-          std::cout << "currid is : " << id2name(currid) << std::endl;
-          std::cout << "budget is: " << budget << std::endl;
-          for(auto i : report[currid].tradeoffCurve){
-            if(std::get<0>(report[currid].tradeoffCurve.back()) > budget){
-              std::cout << "hit\n" << std::endl;
+        // source is dest, cost and time is 0
+        if(sourceid == destid){
+          std::cout << "Do nothing, source is equal to destination.\n" << std::endl; 
+          return;
+        }
 
-              std::cout << "IF STATEMENT report[currid].tradeoffCurve.back() : " <<  std::get<0>(report[currid].tradeoffCurve.back()) 
-                        << " report[currid].predArray.top();" << id2name(report[currid].predArray.top()) << std::endl;
+        // Walk backwards through the path finding the fastest path given the 
+        // budget. When such a path is found subtract the cost edge weight of that path
+        // from budget and repeat the process from the predecessor vertex.
+        while(currid != sourceid){
+          if(firstTime == true && report[currid].tradeoffCurve.empty()){
+          break;
+          }
+          for(auto i : report[currid].tradeoffCurve){
+            if(std::get<0>(report[currid].tradeoffCurve.back()) > budget){ // cannot afford path
 
               report[currid].tradeoffCurve.pop_back();
               report[currid].predArray.pop();
+
+              // if tradeoff curve is empty on the first time through while the path is not feasible
+              if(firstTime == true && report[currid].tradeoffCurve.empty()){ 
+                break;
+              }
             }
             else{
-              std::cout << " ELSE STATEMEMT report[currid].tradeoffCurve.back() : " <<  std::get<0>(report[currid].tradeoffCurve.back()) 
-                        << " report[currid].predArray.top();" << id2name(report[currid].predArray.top()) << std::endl;
+              // grab the total time and cost to display later
+              if(firstTime){
+                totCost = totCost + std::get<0>(report[currid].tradeoffCurve.back());
+                totTime = totTime + std::get<1>(report[currid].tradeoffCurve.back());
+                firstTime = false;
+              }  
               int w; 
+              // find the edge cost from the predecessor vertex
               for(edge e : vertices[currid].incoming){
                 if(e.vertex_id == report[currid].predArray.top()){
                   w = e.weight;
@@ -658,176 +629,100 @@ class graph {
               continue;
             }
           }
-          sleep(1);
         }
 
         result.push(sourceid);
 
-        std::cout << "The fastest path we can afford is: \n\t";
-
-        while(!result.empty()){
-          std::cout << id2name(result.top());
-          if(!result.empty()){
-            std::cout << " -> ";
-          }
-          result.pop();
+        // path was not feasible
+        if(firstTime){ 
+          std::cout << "Sorry, cannot be done.\n" << std::endl;
         }
+        else{
+          std::cout << "The fastest path we can afford will cost " << totCost 
+                    <<  " and will take " << totTime << " units of time.\nThe path is: \n\n\t";
 
-
+          // print optimal path within the budget
+          while(!result.empty()){
+            std::cout << id2name(result.top());
+            result.pop();
+            if(!result.empty()){
+              std::cout << " -> ";
+            }
+            else{std::cout << "\n";}
+          }
+        }
+        std::cout << "\n";
+        std::cout << "\n";
     }
 
 
+    // cpath
+    //
+    // Find the tradeoff curve with regard to cost and time weights
+    // from src to dest, store the relevant information in report.
     bool cpath(int src, int dest, std::vector<vertex_label> &report){
-        std::cout << "hi from cpath\n";
         init_report(report);
         std::priority_queue <vertex, vector<vertex>, std::less<vertex>> q;
         vertices[src].c = 0;
         vertices[src].t = 0;
-        std::cout << "src id  is: " << src << " and src name is: " << id2name(src) << "\n";
 
-        // exit(-1);
-
-        for(vertex v : vertices){
+        for(vertex v : vertices){ // push all vertices to the priority queue
           vertex n;
           n.c = v.c;
           n.t = v.t;
           n.name = v.name;
           n.id = v.id;
-          std::cout << "n.c, n.t, n.name, n.id: " << n.c << " "  << n.t << " " << " " << n.name << " " << n.id << std::endl;
           q.push(n);
         }
-        //exit(-1);
 
         while(!q.empty()){
           bool addToPredArray = false;
-          // for(int i = 0; i < 2; i++){
-          std::cout << "min is: " << q.top().name << std::endl;
           vertex currv = q.top();
           
           if(currv.c == INT_MAX){
             break; // if the top of the q is infinity the rest of the graph is unreachable from src
           }
 
+          // If the current time is greater than the time in the last entry of tradeoffCurve, 
+          // we know this is a non-dominated path, add to the tradeoff curve
           std::tuple<int, int> res (currv.c, currv.t);
           if(report[currv.id].tradeoffCurve.empty() || !(std::get<1>(report[currv.id].tradeoffCurve.back()) <= currv.t)){
-            report[currv.id].tradeoffCurve.push_back(res); // P
+            report[currv.id].tradeoffCurve.push_back(res); 
             report[currv.id].predArray.push(currv.pred);
           }
           
-
+          // For each outgoing edge of the current vertex, compare to existing entries in 
+          // tradeoff curve. If traversing the current edge yeild a greater time in the 
+          // vertex that is traveled to, we update the cost and time of that vertex. 
+          // Note that because of how the algorithm works the cost and time of the 
+          // cheaper but longer path to this edge has already been reached and stored.
           for(edge e : vertices[currv.id].outgoing){
-            // if( (e.weight + currv.c) < vertices[e.vertex_id].c){
-            //   vertices[e.vertex_id].c = e.weight + currv.c;
-            //   q.push(vertices[e.vertex_id]);
-            // }
             if(report[e.vertex_id].tradeoffCurve.empty() 
-               || std::get<1>(report[e.vertex_id].tradeoffCurve.back()) > e.weight_time + currv.t ){ //TODO: or vertices[e.vertex_id].t ??
-              //  if(!report[e.vertex_id].tradeoffCurve.empty() ){
-              //  std::cout << "std::get<1>(report[e.vertex_id].tradeoffCurve.back()): " << std::get<1>(report[e.vertex_id].tradeoffCurve.back()) << std::endl;
-              //  }
-              // update weights
+               || std::get<1>(report[e.vertex_id].tradeoffCurve.back()) > e.weight_time + currv.t ){ 
+
               vertices[e.vertex_id].c = e.weight + currv.c;
               vertices[e.vertex_id].t = e.weight_time + currv.t;
-              //report[e.vertex_id].predArray.push(currv.id);
-              // add new weights to priority q
+
+              // create a new vertex to add to q
               vertex m; 
               m.c = vertices[e.vertex_id].c;
               m.t = vertices[e.vertex_id].t;
               m.name = vertices[e.vertex_id].name;
               m.id = vertices[e.vertex_id].id;
               m.pred = currv.id;
-              std::cout << "\tm.c, m.t, m.name, m.id: " << m.c << " "  << m.t << " " << " " << m.name << " " << m.id << std::endl;
               q.push(m);
-              // add option to report
 
-              // std::tuple<int, int> res (vertices[e.vertex_id].c, vertices[e.vertex_id].t);
-              // report[e.vertex_id].tradeoffCurve.push_back(res); // P
-
-              // // DEBUG //
-              // std::cout << "vertex name is: " << vertices[e.vertex_id].name << ", std::get<1>(report[e.vertex_id].tradeoffCurve.back()): " 
-              //           << std::get<1>(report[e.vertex_id].tradeoffCurve.back()) << std::endl;
-              // // DEBUG //
-              //sleep(2);
             }
           }
           q.pop();
         }
-        // std::cout << "--------------------------------------------------------\n";
-        // for(int i = 0; i < report.size(); i++){
-        //   std::cout << "vertex name is: " << vertices[i].name << std::endl;          
-        //   for(auto k : report[i].tradeoffCurve){
-        //     std::cout << "\tcost is: " <<  std::get<0>(k) << " and time is: " << std::get<1>(k) << std::endl;
-        //   }
-        //   // for(auto j : report[i].predArray){
-        //   //   std::cout << "\tpred is: " << id2name(j) << std::endl;
-        //   // }
-        //   while(!report[i].predArray.empty()){
-        //     std::cout << "\tpred -- " << id2name(report[i].predArray.top()) << std::endl;
-        //     report[i].predArray.pop();
-        //   }
-        // }
-        //std::cout << "min2 is: " << q.top().name << std::endl;
         return true;
     }
 
 
-    
-// void abssort(float* x, unsigned n) {
-//     std::sort(x, x + n,
-//         // Lambda expression begins
-//         [](float a, float b) {
-//             return (std::abs(a) < std::abs(b));
-//         } // end of lambda expression
-//     );
-// }
-    // bool bfs(int src, std::vector<vertex_label> &report) {
-    //   int u, v;
-    //   std::queue<int> q;
-    //   // EXTRACT MIN DATA STRUCTURE
-    //   // std::priority_queue <int, vector<int>, std::greater<int> > q;
-
-    //   if(src < 0 || src >= num_nodes())
-    //     return false;
-
-    //   init_report(report);
-
-    //   report[src].dist = 0;
-
-    //   // since src is the root of the bfs tree, it has no 
-    //   //   predecessor.
-    //   // By convention, we set the predecessor to itself.
-    //   report[src].pred = src;
-    //   report[src].state = DISCOVERED;
-    //   report[src].npaths = 1;
-    //   q.push(src);
-
-    //   while(!q.empty()) {
-    //     // dequeue front node from queue
-    //     u = q.front();
-    //     q.pop();
-
-    //     // examine outgoing edges of u
-    //     for(edge &e : vertices[u].outgoing) {
-    //       v = e.vertex_id;
-    //       if(report[v].state == UNDISCOVERED) { // LOOK HERE
-    //         report[v].dist = report[u].dist + 1;          // get the distance
-    //         report[v].npaths = report[u].npaths;
-    //         // else if(report[u].dist + 1 < report[v].dist){
-    //         //   report[v].npaths = 1;
-    //         // }
-    //         report[v].pred = u;
-    //         report[v].state = DISCOVERED;
-    //         q.push(v);
-    //       }
-    //       else{
-    //         if(report[v].dist == report[u].dist+1){
-    //           report[v].npaths = report[v].npaths + report[u].npaths;
-    //         }
-    //       }
-    //     }
-    //   }
-    //   return true;
-    // }
+    // cpath
+    //
+    // convert string arguments from argv to integers and call the overloaded cpath
     bool cpath(const string src, const string dest, std::vector<vertex_label> &report){
         int s, d;
         if((s=name2id(src)) == -1){
@@ -839,424 +734,6 @@ class graph {
         cpath(s, d, report);
         return true;
     }
-    // bool bfs(const string src, std::vector<vertex_label> &report) {
-    //   int u;
-
-    //   if((u=name2id(src)) == -1)
-    //       return false;
-    //   bfs(u, report);
-    //   return true;
-    // }
-
-  private:
-    // void _dfs(int u, vector<vertex_label> & rpt, bool &cycle) {
-    //   int v;
-
-    //   rpt[u].state = ACTIVE;
-    //   for(edge &e : vertices[u].outgoing) {
-    //     v = e.vertex_id;
-    //     if(rpt[v].state == UNDISCOVERED) {
-    //       rpt[v].pred = u;
-    //       rpt[v].dist = rpt[u].dist + 1;
-    //       _dfs(v, rpt, cycle);
-    //     }
-    //     if(rpt[v].state == ACTIVE) 
-    //       cycle = true;
-    //   }
-    //   rpt[u].state = FINISHED;
-    // }
-
-  public:
-    // bool dfs(int u, vector<vertex_label> & rpt, bool &cycle) {
-
-    //   if(u < 0 || u >= num_nodes()) 
-    //     return false;
-
-    //   cycle = false;
-
-    //   init_report(rpt);
-    //   rpt[u].pred = u;
-    //   rpt[u].dist = 0;
-    //   _dfs(u, rpt, cycle);
-    //   return true;
-    // }
-
-    // bool dfs(const string &src, vector<vertex_label> & rpt, bool &cycle) {
-    //   int u;
-
-    //   if((u=name2id(src)) == -1)
-    //       return false;
-    //   dfs(u, rpt, cycle);
-    //   return true;
-    // }
-
-    // bool has_cycle() {
-    //   int u;
-    //   bool cycle=false;
-    //   vector<vertex_label> rpt;
-
-    //   init_report(rpt);
-    //   for(u=0; u<num_nodes(); u++) {
-    //     if(rpt[u].state == UNDISCOVERED) {
-    //       _dfs(u, rpt, cycle);
-    //       if(cycle)
-    //         return true;
-    //     }
-    //   }
-    //   return false;
-    // }
-
-    // bool topo_sort(std::vector<int> &order) {
-    //   std::queue<int> q;
-    //   std::vector<int> indegrees;
-    //   int u, v;
-    //   int indeg;
-
-    //   order.clear();
-    //   if(has_cycle())
-    //     return false;
-
-    //   for(u=0; u<num_nodes(); u++) {
-    //     indeg = vertices[u].incoming.size();
-
-    //     indegrees.push_back(indeg);
-    //     if(indeg==0)
-    //       q.push(u);
-    //   }
-
-    //   while(!q.empty()){
-    //     u = q.front();
-    //     q.pop();
-    //     order.push_back(u);
-    //     for(edge &e : vertices[u].outgoing) {
-    //       v = e.vertex_id;
-    //       indegrees[v]--;
-    //       if(indegrees[v]==0) 
-    //         q.push(v);
-    //     }
-    //   }
-    //   return true;
-    // }
-
-
-
-    void disp_report(const vector<vertex_label> & rpt, 
-        bool print_paths=false) {
-      int u;
-      vector<int> path;
-
-        // THIS if STATEMENT IS NEW
-        if(rpt.size() != num_nodes()) {
-          std::cerr << "error - disp_report(): report vector has incorrect length\n";
-          return;
-        }
-
-        for(u=0; u<num_nodes(); u++) {
-          std::cout << id2name(u) << " : dist=" <<  rpt[u].dist
-            << " ; pred=" <<  id2name(rpt[u].pred) << 
-            " ; state='" << rpt[u].state << "'; npaths=" << 
-            rpt[u].npaths << "\n";
-          if(print_paths) {
-            extract_path(rpt, u, path);
-            std::cout << "     PATH: <" + id_vec2string(path) + ">\n";
-          }
-        }
-    }
-
-    /******************************************************
-     *
-     * Vocabulary:  
-     *
-     *   In a DAG G:
-     *   
-     *       inputs:  subset of vertices with INDEGREE ZERO
-     *
-     *       outputs: subset of vertices with OUTDEGREE ZERO
-     *
-     *       input-path: a path in G STARTING AT AN INPUT VERTEX
-     *          (and ending at any vertex).
-     *
-     *       output-path:  a path in G starting at any vertex and
-     *          ENDING AT AN OUTPUT VERTEX.
-     *
-     *       input-output-path (or io-path):  a path STARTING AT
-     *          AN INPUT VERTEX _AND_ ENDING AT AN OUTPUT VERTEX.
-     *
-     */
-
-    /* TODO 20 points
-     * function:  extract_path
-     * desc:  extracts the path (if any) encoded by vertex labels
-     *        ending at vertex dest (as an int ID).  Resulting path
-     *        is stored in the int vector path (sequence of vertex
-     *        IDs ENDING WITH dest -- i.e., in "forward order").
-     *
-     *     parameters:
-     *       rpt:  vector of vertex labels associated with given
-     *             graph (calling object).  Presumption:  labels
-     *             have been previously populated by another function
-     *             like bfs, dfs, or critical_paths.
-     *
-     *       dest: vertex ID of the target/destination vertex.
-     *
-     *       path: int vector in which the constructed path is stored.
-     *
-     * returns:  true on success; false otherwise.
-     *           failure:  there is no encoded path ending at vertex
-     *              dest (see discussion below);
-     *              OR, the rpt vector is not of the correct dimension.
-     *
-     * Notes:  predecessor conventions:
-     *
-     *      SOURCE VERTICES:
-     *
-     *         if vertex u is a "source" vertex such as:
-     *
-     *             the source vertex of BFS or DFS or
-     *             an input vertex in a DAG (perhaps analyzed by 
-     *                dag_critical_paths).
-     *
-     *         then the predecessor of u is u itself:
-     *
-     *              rpt[u].pred==u
-     *
-     *      UNREACHABLE VERTICES:
-     *
-     *          if rpt[u].pred == -1, this indicates that THERE IS 
-     *          NO PATH ENDING AT VERTEX u.
-     *
-     *          In this situation, the path vector is made empty and
-     *          false is returned.
-     *
-     *  RUNTIME:  O(|p|) where |p| is the number of edges on 
-     *    the path extracted.
-     *
-     */
-    bool extract_path(const vector<vertex_label> & rpt, 
-        int dest, vector<int> & path) {
-      path.clear();
-      if(rpt.size() != num_nodes())
-        return false;
-
-      // your code here!
-      return true;  // placeholder
-    }
-
-    /*
-     *  TODO 30 points
-     *
-     *  func: dag_critical_paths
-     *  desc: for each vertex u, the length of the critical (LONGEST)
-     *        input-path ENDING AT u.
-     *
-     *        The "length" of a path is the SUM OF THE WEIGHTS OF THE
-     *        EDGES ON THE PATH.
-     *
-     *        On completion, the results are stored in the vector rpt.
-     *        For each vertex u (as an intID),
-     *
-     *          rpt[u].dist  stores the length of the longest (critical)
-     *            input-path ending at vertex u.
-     *
-     *          rpt[u].pred  stores the predecessor vertex of u on a 
-     *            critical/longest input path ending at u.  If there
-     *            are multiple such paths (having equal maximum length)
-     *            there may be multiple correct predecessors.
-     *
-     *  returns:  true on success (as long as graph is a DAG).
-     *            false if graph is not a DAG.
-     *
-     *  runtime:  O(V+E)
-     */
-    // bool dag_critical_paths(vector<vertex_label> & rpt) {
-
-    //   if(has_cycle())
-    //     return false;
-    //   // your code here...
-    //   return true;
-    // }
-
-    /*
-     *  TODO 30 points
-     *  function:  dag_num_paths
-     *  desc:  if given graph (calling object) is a DAG, the vector
-     *         rpt is populated such that:
-     *
-     *           rpt[u].npaths = number of io-paths passing through
-     *                            vertex u.
-     *
-     *           Recall: an IO path starts at an input vertex and
-     *             ends at an output vertex.
-     *
-     *           This value is defined for all vertices u in the
-     *             graph (inputs, outputs and "intermediate" nodes).
-     *
-     *  NOTES:  rpt[u].pred, and rpt[u].dist have no partiular 
-     *          meaning after this operation.
-     *
-     *  EXAMPLE:
-
-                         a  b  c
-                         \  |  /
-                          \ | /
-                            d
-                           / \
-                          e   f
-                           \ /
-                            g
-                           / \
-                          h   i
-                           \ /
-                            j
-
-            There are 3 input nodes (a,b,c) and one output node (j)
-            in this graph.
-
-            There are 12 distinct io-paths passing through vertex d in 
-            this dag (note:  edges are pointed downward)
-
-            Can you enumerate them?
-
-     *
-     *  returns true if graph is a DAG; false otherwise.        
-     *
-     *  RUNTIME:  O(V+E)  -- Note: in general, the number of paths
-     *                       in a graph may be exponential in the
-     *                       number of vertices.
-     *
-     *                       This means that you cannot explicitly
-     *                       enumerate all of the paths and count them!
-     *                       (The enum_paths function below which DOES
-     *                       enumerate a set of paths MAY take exponential
-     *                       time).
-     *
-     * General Hint:  an io-path passing through a vertex u is 
-     *   composed of an input-path ending at u, followed by an
-     *   output path starting at u.  
-     *
-     *   Now, if you could figure out the number of input-paths
-     *   ending at u and the number of output paths starting at u, 
-     *   could you determine the number of io-paths passing through
-     *   u?
-     *
-     */
-    // bool dag_num_paths(vector<vertex_label> & rpt) {
-    //   if(has_cycle())
-    //     return false;
-    //   // your code here...
-    //   return true;
-    // }
-
-    /*
-     * TODO 20 points
-     * function:  valid_topo_order
-     * desc:  determines if vertex sequence in the given vector
-     *        (parameter order) is a valid topological ordering of
-     *        the given graph (calling object).
-     *
-     *        returns true if it is; false otherwise.
-     *
-     * details:  returns false if graph is not a DAG.
-     *
-     *           Note that vertices are given as their integer IDs.
-     *
-     * RUNTIME:  O(V+E)
-     */
-    // bool valid_topo_order(const vector<int> & order) {
-    //   if(has_cycle())
-    //     return false;
-    //   return true;
-
-    // }
-
-    /*
-     * TODO 30 points
-     *
-     * function:  enum_paths
-     * desc:  enumerates all input-paths ending at target vertes in
-     *        a DAG.
-     * details:  Given a DAG and vertex target in the graph, the
-     *   vector paths is populated with ALL input paths ending at
-     *   vertex target.
-     *
-     * [NOTE:  target vertex is passed as its integer ID; however,
-     *   vertices in paths constructed are represented by their 
-     *   name -- as a string]
-     *
-     * A path is represented as a string containing the names of
-     * each vertex (NOT intger vertex IDs) on the path in sequence; 
-     * vertex names are separated by a single space.
-     *
-     * returns:  true on success; 
-     *           false on failure (graph is not a DAG or target vertex ID
-     *           is out of range).
-     *
-     * RUNTIME:  this one may be unavoidably exponential!
-     *
-     * EXAMPLES:
-     *
-     *   Chicago
-     *   NewYork
-     *   LosAngeles
-     *
-     * and there are edges:
-     *
-     *   LosAngeles Chicago
-     *   Chicago NewYork
-     *
-     * The path LosAngeles to Chicago to NewYork is represented by the
-     * string:
-     *
-     *   "LosAngeles Chicago NewYork"
-     *
-     * Another example:  the input file ex1A is a DAG.  Using vertex g
-     * as the target (integer ID: 6), will result in the paths vector
-     * containing the following strings:
-     *
-
-           "a d g"
-           "a b d g"
-           "a c d g"
-           "a d e g"
-           "a b d e g"
-           "a c d e g"
-           "a d f g"
-           "a b d f g"
-           "a c d f g"
-     *
-     * NOTE:  the concatenation operator '+' on strings might
-     *   make some of your work pretty easy to code!
-     *
-     * COMMENT:  this function can be implemented with about
-     *   20 lines of code.
-     */
-    // bool enum_paths(int target, vector<string> &paths) {
-    //   paths.clear();
-    //   if(has_cycle() || target < 0 || target >= num_nodes())
-    //     return false;
-
-    //   // your code here!
-    //   return true;
-    // }
-
-
-
-    /*
-     * (DONE)
-     * func: enum_paths(string, vector<string> &)
-     * desc: same as enum_paths(int, vector<string> &) above except
-     *       target vertex is taken as its name (as a string).
-     *
-     *       Simply translates target vertex name to its integer id
-     *       and calls enum_paths(int, vector<string> &) above.
-     */
-    // bool enum_paths(const string &target,  vector<string> &paths) {
-    //   int tgt;
-    //   if((tgt=name2id(target)) == -1)
-    //       return false;
-
-    //   return enum_paths(tgt, paths);
-    // }
 
 };
 
